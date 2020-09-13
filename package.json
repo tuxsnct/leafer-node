@@ -1,0 +1,39 @@
+{
+  "name": "leafer-node",
+  "version": "1.0.0",
+  "description": "Leafer (https://github.com/kosen20s/leafer) Node.js implementation",
+  "main": "src/index.js",
+  "dependencies": {
+    "discord.js": "^12.3.1",
+    "jsdom": "^16.4.0",
+    "node-fetch": "^2.6.1",
+    "sharp": "^0.26.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.10.1",
+    "@typescript-eslint/eslint-plugin": "^4.1.0",
+    "@typescript-eslint/parser": "^4.1.0",
+    "eslint": "^7.9.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "prettier": "^2.1.1",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.2"
+  },
+  "scripts": {
+    "start": "ts-node ./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tuxsnct/leafer-node.git"
+  },
+  "keywords": [],
+  "author": "TuxSNCT <email@tuxsnct.com> (https://github.com/tuxsnct/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tuxsnct/leafer-node/issues"
+  },
+  "homepage": "https://github.com/tuxsnct/leafer-node#readme"
+}
