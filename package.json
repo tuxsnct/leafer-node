@@ -35,5 +35,8 @@
   "bugs": {
     "url": "https://github.com/tuxsnct/leafer-node/issues"
   },
-  "homepage": "https://github.com/tuxsnct/leafer-node#readme"
+  "homepage": "https://github.com/tuxsnct/leafer-node#readme",
+  "engines": {
+    "npm": "Please use yarn instead of npm."
+  }
 }
