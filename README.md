@@ -11,4 +11,4 @@ Leafer (https://github.com/kosen20s/leafer) Node.js implementation without SQLit
 1. Run `git pull https://github.com/tuxsnct/leafer-node.git`.
 2. Run `yarn`.
 3. Add Leafer to your server using Discord OAuth2 URL.
-4. Run `export <Discord Bot Token> && yarn start`.
+4. Run `export LEAFER_TOKEN=<Discord Bot Token> && yarn start`.
