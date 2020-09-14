@@ -25,7 +25,9 @@ client.on('ready', () => {
 
 client.on('message', async msg => {
   // Important variables
-  const userMsg = msg.content.split(' ')
+  const userMsg = [...msg.content.split(' ')].map(d => {
+    return d.toLocaleLowerCase()
+  })
   const userCommand = userMsg[1]
   const userCommandOptions = userMsg.splice(2)
 
