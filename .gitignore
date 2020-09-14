@@ -107,5 +107,3 @@ dist
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 
-# Leafer
-leafer.json
