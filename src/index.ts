@@ -46,17 +46,17 @@ client.on('message', async msg => {
     }
     ;(async () => {
       const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true,
+        args: ['--no-sandbox'],
       })
       const page = await browser.newPage()
       await page.goto(
-        `https://${leaferJson[userId].platform}.com/${leaferJson[userId].name}`
+        `https://${leaferJson[userId].platform}.com/${leaferJson[userId].name}`,
+        { waitUntil: 'networkidle2' }
       )
-      const data = await page.waitForSelector(targetSelector).then(() =>
-        page.$eval(targetSelector, item => {
-          return item.outerHTML
-        })
-      )
+      const data = await page.$eval(targetSelector, item => {
+        return item.outerHTML
+      })
       const svgo = new SVGO()
       svgo
         .optimize(data)
