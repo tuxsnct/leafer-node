@@ -30,7 +30,6 @@ client.on('message', async msg => {
   const userCommandOptions = userMsg.splice(2)
 
   // Command-line functions
-  // TODO: fetchUserIcon has not been implemented yet.
   const fetchUserIcon = (userId: string) => {
     let targetSelector: string
     switch (leaferJson[userId].platform) {
