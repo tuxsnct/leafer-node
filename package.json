@@ -40,7 +40,7 @@
   },
   "homepage": "https://github.com/tuxsnct/leafer-node#readme",
   "engines": {
-    "node":">=10.16.0",
+    "node":"12.x",
     "npm": "Please use yarn instead of npm."
   }
 }
