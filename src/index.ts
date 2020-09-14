@@ -103,7 +103,8 @@ client.on('message', async msg => {
   }
 
   const platformFilter = (m: IMsgFilter) =>
-    ['github', 'gitlab'].includes(m.content) && !m.author.bot
+    ['github', 'gitlab'].includes(m.content.toLocaleLowerCase()) &&
+    !m.author.bot
   const usernameFilter = (m: IMsgFilter) => !m.author.bot
 
   if (!msg.author.bot) {
