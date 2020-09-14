@@ -46,7 +46,7 @@ client.on('message', async msg => {
     }
     ;(async () => {
       const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         args: ['--no-sandbox'],
       })
       const page = await browser.newPage()
