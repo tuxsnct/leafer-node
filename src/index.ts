@@ -32,7 +32,7 @@ client.on('message', async msg => {
   const userCommandOptions = userMsg.splice(2)
 
   // Command-line functions
-  const fetchUserIcon = (userId: string) => {
+  const fetchUserIcon = async (userId: string) => {
     let targetSelector: string
     switch (leaferJson[userId].platform) {
       case 'github':
@@ -44,31 +44,26 @@ client.on('message', async msg => {
       default:
         return
     }
-    ;(async () => {
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox'],
-      })
-      const page = await browser.newPage()
-      await page.goto(
-        `https://${leaferJson[userId].platform}.com/${leaferJson[userId].name}`,
-        { waitUntil: 'networkidle2' }
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox'],
+    })
+    const page = await browser.newPage()
+    await page.goto(
+      `https://${leaferJson[userId].platform}.com/${leaferJson[userId].name}`,
+      { waitUntil: 'networkidle2' }
+    )
+    const data = await page.$eval(targetSelector, item => {
+      return item.outerHTML
+    })
+    const svgo = new SVGO()
+    svgo
+      .optimize(data)
+      .then(result => Buffer.from(result.data))
+      .then(svgBuffer =>
+        sharp(svgBuffer).resize(1000, null).png().toFile(`./tmp/${userId}.png`)
       )
-      const data = await page.$eval(targetSelector, item => {
-        return item.outerHTML
-      })
-      const svgo = new SVGO()
-      svgo
-        .optimize(data)
-        .then(result => Buffer.from(result.data))
-        .then(svgBuffer =>
-          sharp(svgBuffer)
-            .resize(1000, null)
-            .png()
-            .toFile(`./tmp/${userId}.png`)
-        )
-      await browser.close()
-    })()
+    await browser.close()
   }
   const setUser = (userId: string, userName: string, userPlatform: string) => {
     try {
@@ -234,8 +229,9 @@ client.on('message', async msg => {
           break
       }
     } else if (['草', 'grass'].includes(msg.content)) {
-      fetchUserIcon(msg.author.id)
-      msg.channel.send('', { files: [`./tmp/${msg.author.id}.png`] })
+      fetchUserIcon(msg.author.id).then(() => {
+        msg.channel.send('', { files: [`./tmp/${msg.author.id}.png`] })
+      })
     }
   }
 })
