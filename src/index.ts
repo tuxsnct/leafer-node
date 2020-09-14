@@ -1,8 +1,9 @@
 import { existsSync, mkdir, readFileSync, writeFileSync } from 'fs'
-import { URL } from 'url'
-import fetch from 'node-fetch'
-import { JSDOM } from 'jsdom'
 import { Client, User } from 'discord.js'
+import puppeteer from 'puppeteer'
+import sharp from 'sharp'
+import SVGO from 'svgo'
+import { URL } from 'url'
 
 const client = new Client()
 
@@ -19,7 +20,7 @@ if (!existsSync('./tmp/leafer.json')) {
 const leaferJson = JSON.parse(readFileSync('./tmp/leafer.json', 'utf-8'))
 
 client.on('ready', () => {
-  process.stdout.write(`Leafer is running now.`)
+  console.log(`Leafer is running now.`)
 })
 
 client.on('message', async msg => {
@@ -30,29 +31,71 @@ client.on('message', async msg => {
 
   // Command-line functions
   // TODO: fetchUserIcon has not been implemented yet.
-  const fetchUserIcon = (userId: string) =>
-    fetch(
-      `https://${leaferJson[userId].platform}/${leaferJson[userId].name}`
-    ).then(async response => new JSDOM(await response.text()))
-  const setUser = (userName: string, userPlatform: string) => {
-    writeFileSync(
-      './tmp/leafer.json',
-      JSON.stringify(
-        Object.assign(leaferJson, {
-          [msg.author.id]: { name: userName, platform: userPlatform },
+  const fetchUserIcon = (userId: string) => {
+    let targetSelector: string
+    switch (leaferJson[userId].platform) {
+      case 'github':
+        targetSelector = '.js-calendar-graph-svg'
+        break
+      case 'gitlab':
+        targetSelector = '.contrib-calendar'
+        break
+      default:
+        return
+    }
+    ;(async () => {
+      const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      })
+      const page = await browser.newPage()
+      await page.goto(
+        `https://${leaferJson[userId].platform}.com/${leaferJson[userId].name}`
+      )
+      const data = await page.waitForSelector(targetSelector).then(() =>
+        page.$eval(targetSelector, item => {
+          return item.outerHTML
         })
-      ),
-      'utf-8'
-    )
+      )
+      const svgo = new SVGO()
+      svgo
+        .optimize(data)
+        .then(result => Buffer.from(result.data))
+        .then(svgBuffer =>
+          sharp(svgBuffer)
+            .resize(1000, null)
+            .png()
+            .toFile(`./tmp/${userId}.png`)
+        )
+      await browser.close()
+    })()
   }
-  const removeUser = (userName: string) => {
-    return userName
+  const setUser = (userId: string, userName: string, userPlatform: string) => {
+    try {
+      writeFileSync(
+        './tmp/leafer.json',
+        JSON.stringify(
+          Object.assign(leaferJson, {
+            [userId]: { name: userName, platform: userPlatform },
+          })
+        ),
+        'utf-8'
+      )
+      fetchUserIcon(userId)
+      msg.channel.send('登録が完了しました')
+    } catch (e) {
+      msg.channel.send('エラーが発生しました、最初からやり直してください')
+    }
   }
-  const checkOption = (option: string) => userCommandOptions.includes(option)
-  const getOptionValue = (option: string) =>
-    userCommandOptions[
-      userCommandOptions!.indexOf(option) + 1
-    ].toLocaleLowerCase()
+  const removeUser = (userId: string) => {
+    try {
+      delete leaferJson[userId]
+      writeFileSync('./tmp/leafer.json', JSON.stringify(leaferJson), 'utf-8')
+      msg.channel.send(`ユーザーの削除が完了しました`)
+    } catch (e) {
+      msg.channel.send('エラーが発生しました、最初からやり直してください')
+    }
+  }
+  const getOptionValue = () => userCommandOptions.join(' ').toLocaleLowerCase()
 
   // Message filters
   interface IMsgFilter {
@@ -68,47 +111,22 @@ client.on('message', async msg => {
     if (userMsg[0] === '!leaf') {
       switch (userCommand) {
         case 'set':
-          if (checkOption('-u') && getOptionValue('-u')) {
-            const parsedUrl = new URL(getOptionValue('-u'))
-            setUser(
-              <string>parsedUrl.pathname
-                .replace(/^\/+|\/+$/g, '')
-                .split('/')
-                .pop(),
-              parsedUrl.host
-            )
-          } else if (checkOption('-n') && getOptionValue('-n')) {
-            msg.channel.send('`GitHub`か`GitLab`のどちらかを入力してください')
-            msg.channel
-              .awaitMessages(platformFilter, {
-                max: 1,
-                time: 30000,
-              })
-              .then(collected =>
-                setUser(
-                  getOptionValue('-n'),
-                  `${collected.first()!.content.toLocaleLowerCase()}.com`
-                )
+          if (userCommandOptions.length !== 0) {
+            try {
+              const parsedUrl = new URL(getOptionValue())
+              setUser(
+                msg.author.id,
+                parsedUrl.pathname
+                  .replace(/^\/+|\/+$/g, '')
+                  .split('/')
+                  .pop() as string,
+                parsedUrl.host.replace('.com', '')
               )
-              .catch(() => {
-                msg.channel.send('最初からやり直してください')
-              })
-          } else if (checkOption('-p') && getOptionValue('-p')) {
-            msg.channel.send('ユーザー名を入力してください')
-            msg.channel
-              .awaitMessages(usernameFilter, {
-                max: 1,
-                time: 30000,
-              })
-              .then(collected =>
-                setUser(
-                  collected.first()!.content.toLocaleLowerCase(),
-                  `${getOptionValue('-p')}.com`
-                )
+            } catch {
+              msg.channel.send(
+                'エラーが発生しました、最初からやり直してください'
               )
-              .catch(() => {
-                msg.channel.send('最初からやり直してください')
-              })
+            }
           } else {
             msg.channel.send('`GitHub`か`GitLab`のどちらかを入力してください')
             msg.channel
@@ -125,24 +143,28 @@ client.on('message', async msg => {
                   })
                   .then(collectedUserName => {
                     setUser(
+                      msg.author.id,
                       collectedUserName.first()!.content.toLocaleLowerCase(),
                       `${collectedPlatform
                         .first()!
-                        .content.toLocaleLowerCase()}.com`
+                        .content.toLocaleLowerCase()}`
                     )
                   })
                   .catch(() => {
-                    msg.channel.send('最初からやり直してください')
+                    msg.channel.send(
+                      'エラーが発生しました、最初からやり直してください'
+                    )
                   })
               })
               .catch(() => {
-                msg.channel.send('最初からやり直してください')
+                msg.channel.send(
+                  'エラーが発生しました、最初からやり直してください'
+                )
               })
           }
           break
         case 'remove':
-          removeUser(msg.author.username)
-          msg.channel.send(`ユーザーの削除が完了しました`)
+          removeUser(msg.author.id)
           break
         case 'help':
         case undefined:
@@ -155,7 +177,7 @@ client.on('message', async msg => {
               },
               title: 'Leaferのコマンド一覧',
               description:
-                'GitHubとGitLabにのみ対応しています\n`!leafer <コマンド> <コマンドオプション>`のように入力してください\n各コマンドについては以下の通りです',
+                'GitHubとGitLabにのみ対応しています\n`!leafer <コマンド>`のように入力してください\n各コマンドについては以下の通りです',
               color: '#215732',
               timestamp: new Date(),
               footer: {
@@ -167,9 +189,7 @@ client.on('message', async msg => {
                   name: ':v: `set`',
                   value:
                     'ユーザーを登録する\n' +
-                    '`-n <ユーザー名>`でユーザー名を登録できます\n' +
-                    '`-p <github|gitlab>`でGitHubかGitLabか選択できます' +
-                    '`-u <URL>`でURLから直接登録できます',
+                    '`!leafer set <GitHub|GitLabのURL>`で、URLから直接登録できます',
                 },
                 {
                   name: ':wave: `remove`',
@@ -212,7 +232,7 @@ client.on('message', async msg => {
           break
       }
     } else if (['草', 'grass'].includes(msg.content)) {
-      msg.channel.send('草')
+      msg.channel.send('', { files: [`./tmp/${msg.author.id}.png`] })
     }
   }
 })
