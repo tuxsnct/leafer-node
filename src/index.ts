@@ -234,6 +234,7 @@ client.on('message', async msg => {
           break
       }
     } else if (['草', 'grass'].includes(msg.content)) {
+      fetchUserIcon(msg.author.id)
       msg.channel.send('', { files: [`./tmp/${msg.author.id}.png`] })
     }
   }
