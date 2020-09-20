@@ -1,14 +1,26 @@
 import { Client } from 'discord.js'
-import { writeFileSync, unlinkSync } from 'fs'
+import { writeFileSync, unlinkSync, existsSync, mkdir } from 'fs'
 import { JSDOM } from 'jsdom'
 import svg2png from 'svg2png'
 import SVGO from 'svgo'
 import { URL } from 'url'
-import init from './init'
 
 const client = new Client()
-init(client)
 let leaferJson: { [userId: string]: string } = {}
+if (!existsSync('./tmp')) {
+  mkdir('./tmp', err => {
+    if (err) {
+      throw err
+    }
+  })
+}
+if (!existsSync('./tmp/leafer.json')) {
+  writeFileSync('./tmp/leafer.json', '{}')
+}
+
+client.on('ready', () => {
+  console.log(`Leafer is running now.`)
+})
 
 client.on('message', async msg => {
   // Important variables
