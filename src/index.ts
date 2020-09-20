@@ -1,4 +1,4 @@
-import { Client } from 'discord.js'
+import { Client, MessageAttachment } from 'discord.js'
 import { writeFileSync, unlinkSync, existsSync, mkdir } from 'fs'
 import { JSDOM } from 'jsdom'
 import svg2png from 'svg2png'
@@ -7,16 +7,22 @@ import { URL } from 'url'
 
 const client = new Client()
 let leaferJson: { [userId: string]: string } = {}
-if (!existsSync('./tmp')) {
-  mkdir('./tmp', err => {
-    if (err) {
-      throw err
-    }
-  })
-}
-if (!existsSync('./tmp/leafer.json')) {
-  writeFileSync('./tmp/leafer.json', '{}')
-}
+
+process.on('exit', () => {
+  if (!existsSync('./tmp')) {
+    mkdir('./tmp', err => {
+      if (err) {
+        throw err
+      }
+    })
+  }
+  if (!existsSync('./tmp/leafer.json')) {
+    writeFileSync('./tmp/leafer.json', '{}')
+  }
+})
+process.on('SIGINT', () => {
+  process.exit(0)
+})
 
 client.on('ready', () => {
   console.log(`Leafer is running now.`)
@@ -40,12 +46,9 @@ client.on('message', async msg => {
             'js-calendar-graph-svg'
           )[0]
       )
-      .then(elemSvg => elemSvg.outerHTML)
-      .then(svg => new SVGO().optimize(svg))
-      .then(optimizedSvg => Buffer.from(optimizedSvg.data))
-      .then(buffer =>
-        svg2png(buffer).then(png => writeFileSync(`./tmp/${userId}.png`, png))
-      )
+      .then(elemSvg => new SVGO().optimize(elemSvg.outerHTML))
+      .then(optimizedSvg => svg2png(Buffer.from(optimizedSvg.data)))
+      .then(bufferPng => msg.channel.send(new MessageAttachment(bufferPng)))
   }
   const setUser = (userId: string, userName: string) => {
     try {
@@ -61,7 +64,6 @@ client.on('message', async msg => {
   const removeUser = (userId: string) => {
     try {
       delete leaferJson[userId]
-      writeFileSync('./tmp/leafer.json', JSON.stringify(leaferJson), 'utf-8')
       unlinkSync(`./tmp/${userId}.png`)
       msg.channel.send(`ユーザーの削除が完了しました`)
     } catch (e) {
@@ -99,10 +101,15 @@ client.on('message', async msg => {
             } else {
               msg.channel.send('ユーザー名を入力してください')
               msg.channel
-                .awaitMessages(() => !msg.author.bot, {
-                  max: 1,
-                  time: 30000,
-                })
+                .awaitMessages(
+                  () => {
+                    return !msg.author.bot
+                  },
+                  {
+                    max: 1,
+                    time: 30000,
+                  }
+                )
                 .then(collectedUserName => {
                   setUser(
                     msg.author.id,
