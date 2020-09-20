@@ -1,5 +1,5 @@
 import { Client, Message, MessageAttachment } from 'discord.js'
-import { writeFileSync, unlinkSync, existsSync, mkdir } from 'fs'
+import { writeFileSync, existsSync, mkdir } from 'fs'
 import { JSDOM } from 'jsdom'
 import svg2png from 'svg2png'
 import SVGO from 'svgo'
@@ -156,7 +156,7 @@ client.on('message', async msg => {
                 },
                 title: 'Leaferについて',
                 url: 'https://github.com/tuxsnct/leafer-node',
-                description: `leafer-node v${process.env.npm_package_version} (Node.js ${process.version})\nリポジトリ: [GitHub](https://github.com/tuxsnct/leafer-node)`,
+                description: `leafer-node (Node.js ${process.version})\nリポジトリ: [GitHub](https://github.com/tuxsnct/leafer-node)`,
                 color: '#215732',
                 timestamp: new Date(),
                 footer: {
