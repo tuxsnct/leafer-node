@@ -1,9 +1,8 @@
-import { Client, MessageAttachment } from 'discord.js'
+import { Client, Message, MessageAttachment } from 'discord.js'
 import { writeFileSync, unlinkSync, existsSync, mkdir } from 'fs'
 import { JSDOM } from 'jsdom'
 import svg2png from 'svg2png'
 import SVGO from 'svgo'
-import { URL } from 'url'
 
 const client = new Client()
 let leaferJson: { [userId: string]: string } = {}
@@ -37,7 +36,7 @@ client.on('message', async msg => {
   const userCommandOptions = userMsg.splice(2)
 
   // Command-line functions
-  const fetchUserIcon = async (userId: string) => {
+  const sendUserGrass = async (userId: string) => {
     const targetUrl = `https://github.com/${leaferJson[userId]}`
     JSDOM.fromURL(targetUrl)
       .then(
@@ -55,7 +54,6 @@ client.on('message', async msg => {
       leaferJson = Object.assign(leaferJson, {
         [userId]: userName,
       })
-      fetchUserIcon(userId)
       msg.channel.send('登録が完了しました')
     } catch (e) {
       msg.channel.send('エラーが発生しました、最初からやり直してください')
@@ -79,20 +77,7 @@ client.on('message', async msg => {
           case 'set':
             if (userCommandOptions.length !== 0) {
               try {
-                const parsedUrl = new URL(getOptionValue())
-                switch (parsedUrl.host.replace('.com', '')) {
-                  case 'github':
-                    setUser(
-                      msg.author.id,
-                      parsedUrl.pathname
-                        .replace(/^\/+|\/+$/g, '')
-                        .split('/')
-                        .pop() as string
-                    )
-                    break
-                  default:
-                    throw new Error()
-                }
+                setUser(msg.author.id, getOptionValue())
               } catch {
                 msg.channel.send(
                   'エラーが発生しました、最初からやり直してください'
@@ -101,15 +86,10 @@ client.on('message', async msg => {
             } else {
               msg.channel.send('ユーザー名を入力してください')
               msg.channel
-                .awaitMessages(
-                  () => {
-                    return !msg.author.bot
-                  },
-                  {
-                    max: 1,
-                    time: 30000,
-                  }
-                )
+                .awaitMessages((m: Message) => msg.author.id === m.author.id, {
+                  max: 1,
+                  time: 30000,
+                })
                 .then(collectedUserName => {
                   setUser(
                     msg.author.id,
@@ -149,7 +129,7 @@ client.on('message', async msg => {
                     name: ':v: `set`',
                     value:
                       'ユーザーを登録する\n' +
-                      '`!leaf set <GitHubのURL>`で、URLから直接登録できます',
+                      '`!leaf set <GitHubのID>`で、すぐに登録できます',
                   },
                   {
                     name: ':wave: `remove`',
@@ -194,7 +174,7 @@ client.on('message', async msg => {
         break
       case '草':
       case 'grass':
-        msg.channel.send('', { files: [`./tmp/${msg.author.id}.png`] })
+        await sendUserGrass(msg.author.id)
         break
       default:
         break
