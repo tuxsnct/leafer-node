@@ -7,9 +7,6 @@
     "airbnb-base",
     "plugin:prettier/recommended"
   ],
-  "plugins": [
-    "prettier"
-  ],
   "globals": {
     "Atomics": "readonly",
     "SharedArrayBuffer": "readonly"
@@ -20,8 +17,34 @@
     "sourceType": "module",
     "tsconfigRootDir": "."
   },
+  "plugins": [
+    "prettier"
+  ],
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [
+          ".js",
+          ".jsx",
+          ".json",
+          ".ts",
+          ".tsx"
+        ]
+      }
+    }
+  },
   "rules": {
     "no-console": 0,
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+    ],
     "prettier/prettier": ["error", {"endOfLine":  "auto"}]
   }
 }
