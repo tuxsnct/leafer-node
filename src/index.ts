@@ -62,7 +62,6 @@ client.on('message', async msg => {
   const removeUser = (userId: string) => {
     try {
       delete leaferJson[userId]
-      unlinkSync(`./tmp/${userId}.png`)
       msg.channel.send(`ユーザーの削除が完了しました`)
     } catch (e) {
       msg.channel.send('エラーが発生しました、最初からやり直してください')
