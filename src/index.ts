@@ -37,17 +37,19 @@ client.on('message', async msg => {
 
   // Command-line functions
   const sendUserGrass = async (userId: string) => {
-    const targetUrl = `https://github.com/${leaferJson[userId]}`
-    JSDOM.fromURL(targetUrl)
-      .then(
-        dom =>
-          dom.window.document.body.getElementsByClassName(
-            'js-calendar-graph-svg'
-          )[0]
-      )
-      .then(elemSvg => new SVGO().optimize(elemSvg.outerHTML))
-      .then(optimizedSvg => svg2png(Buffer.from(optimizedSvg.data)))
-      .then(bufferPng => msg.channel.send(new MessageAttachment(bufferPng)))
+    if (leaferJson[userId]) {
+      const targetUrl = `https://github.com/${leaferJson[userId]}`
+      JSDOM.fromURL(targetUrl)
+        .then(
+          dom =>
+            dom.window.document.body.getElementsByClassName(
+              'js-calendar-graph-svg'
+            )[0]
+        )
+        .then(elemSvg => new SVGO().optimize(elemSvg.outerHTML))
+        .then(optimizedSvg => svg2png(Buffer.from(optimizedSvg.data)))
+        .then(bufferPng => msg.channel.send(new MessageAttachment(bufferPng)))
+    }
   }
   const setUser = (userId: string, userName: string) => {
     try {
