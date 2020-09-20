@@ -1,6 +1,6 @@
 {
   "name": "leafer-node",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Leafer (https://github.com/kosen20s/leafer) Node.js implementation",
   "main": "src/index.ts",
   "dependencies": {
